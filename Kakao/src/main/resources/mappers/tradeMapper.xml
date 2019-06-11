@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper 
+    PUBLIC "-//mybatis.org/DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kakao.hymin.trade.tradeMapper">
+
+	<select id="getTradeCustList" resultType="HashMap">
+		select aa.trade_year as year , a.accnt_nm as name, aa.accnt_no as acctNo, aa.sum_amt as sumAmt
+		from (
+			select row_number() over (partition by tt.trade_year order by tt.sum_amt desc) as rnum,
+		    tt.*
+			from (
+				select substr(trade_dt,1,4) trade_year, t.accnt_no, sum(t.trade_amt - t.trade_fee) sum_amt
+				from db1.tbl_trade t
+				where t.cncl_yn = 'N'
+				group by trade_year, t.accnt_no
+		    )TT
+		)AA, db1.tbl_accnt a
+		where aa.accnt_no = a.accnt_no
+		and rnum = 1
+		order by year
+	</select>
+	
+	<select id="getNoTradeCustList" resultType="HashMap">
+		SELECT '2018' as year, a.accnt_nm as name, a.accnt_no as acctNo
+		FROM db1.tbl_accnt a LEFT outer JOIN db1.tbl_trade t 
+		ON a.accnt_no = t.accnt_no and t.trade_dt like'2018%' and t.cncl_yn = 'N'
+		where t.accnt_no is null
+		union all
+		SELECT '2019' as year, a.accnt_nm as name, a.accnt_no as acctNo
+		FROM db1.tbl_accnt a LEFT outer JOIN db1.tbl_trade t 
+		ON a.accnt_no = t.accnt_no and t.trade_dt like'2019%' and t.cncl_yn = 'N'
+		where t.accnt_no is null
+	</select>
+	
+	<select id="getTradeSumList" resultType="com.kakao.hymin.model.TradeOutDTO">
+		select substr(t.trade_dt,1,4) as year, b.branch_cd as brCode, b.branch_nm as brName, sum(t.trade_amt - t.trade_fee) as sumAmt
+		from db1.tbl_trade t, db1.tbl_accnt a, db1.tbl_branch b
+		where t.accnt_no = a.accnt_no
+		and a.branch_cd = b.branch_cd
+		and t.cncl_yn = 'N'
+		group by substr(t.trade_dt,1,4), b.branch_cd, b.branch_nm
+		order by substr(t.trade_dt,1,4), sumAmt desc
+	</select>
+	
+	<select id="getBranchSumInfo" resultType="HashMap">
+		select b.branch_nm as brName, b.branch_cd as brCode, sum(t.trade_amt - t.trade_fee) as sumAmt
+		from db1.tbl_trade t, db1.tbl_accnt a, db1.tbl_branch b
+		where t.accnt_no = a.accnt_no
+		and a.branch_cd = b.branch_cd
+		and t.cncl_yn = 'N'
+		and b.branch_nm = #{brName}
+		group by b.branch_cd, b.branch_nm
+	</select>
+	
+	<select id="getBranchSumInfo2" resultType="HashMap">
+		select '판교점' as brName, 'A' as brCode, sum(t.trade_amt - t.trade_fee) as sumAmt
+		from db1.tbl_trade t, db1.tbl_accnt a, db1.tbl_branch b
+		where t.accnt_no = a.accnt_no
+		and a.branch_cd = b.branch_cd
+		and t.cncl_yn = 'N'
+		and b.branch_nm in('분당점','판교점')
+	</select>
+</mapper>
