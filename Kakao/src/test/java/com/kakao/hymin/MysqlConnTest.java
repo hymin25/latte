@@ -14,7 +14,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration("file:src/main/webapp/WEB-INF/spring/root-context.xml")
-
 public class MysqlConnTest {
 	private static final Logger logger = LoggerFactory.getLogger(MysqlConnTest.class);
 	
